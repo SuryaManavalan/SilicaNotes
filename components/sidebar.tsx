@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { Note } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,6 +9,7 @@ import { Search, Plus, Menu, Edit3, GitBranch } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { ThemeToggle } from "./theme-toggle"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
 
 interface SidebarProps {
   notes: Note[]
@@ -21,92 +22,168 @@ interface SidebarProps {
 export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onChangeView }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Check if we're on mobile
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    // Initial check
+    checkIfMobile()
+
+    // Add event listener
+    window.addEventListener("resize", checkIfMobile)
+
+    // Cleanup
+    return () => window.removeEventListener("resize", checkIfMobile)
+  }, [])
 
   const filteredNotes = notes.filter((note) => note.title.toLowerCase().includes(searchQuery.toLowerCase()))
 
+  // Sidebar content
+  const sidebarContent = (
+    <>
+      <div className="p-2 flex items-center justify-between border-b">
+        <h2 className="font-semibold text-lg">Notes</h2>
+      </div>
+
+      <div className="p-2 border-b">
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search notes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1">
+        <div className="p-2 space-y-1">
+          {filteredNotes.map((note) => (
+            <Button
+              key={note.id}
+              variant="ghost"
+              className={cn(
+                "w-full justify-start text-left font-normal h-auto py-3",
+                selectedNoteId === note.id && "bg-accent text-accent-foreground",
+              )}
+              onClick={() => {
+                onSelectNote(note.id)
+                if (isMobile) setIsMobileMenuOpen(false)
+              }}
+            >
+              <div className="flex flex-col w-full gap-1 overflow-hidden">
+                <div className="font-medium truncate">{note.title}</div>
+                <div className="text-xs text-muted-foreground">{format(new Date(note.updatedAt), "MMM d, yyyy")}</div>
+              </div>
+            </Button>
+          ))}
+        </div>
+      </ScrollArea>
+
+      <div className="p-2 border-t">
+        <Button className="w-full" size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          New Note
+        </Button>
+      </div>
+    </>
+  )
+
   return (
-    <div className="flex h-screen">
-      {/* Always visible sidebar */}
-      <div className="border-r bg-muted/40 flex flex-col items-center py-2 w-12">
-        <Button variant="ghost" size="icon" onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="mb-4">
-          <Menu className="h-4 w-4" />
-          <span className="sr-only">Toggle Sidebar</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onChangeView("editor")}
-          className={cn(activeView === "editor" && "bg-accent")}
-        >
-          <Edit3 className="h-4 w-4" />
-          <span className="sr-only">Editor View</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onChangeView("graph")}
-          className={cn(activeView === "graph" && "bg-accent")}
-        >
-          <GitBranch className="h-4 w-4" />
-          <span className="sr-only">Graph View</span>
-        </Button>
-        <div className="mt-auto">
-          <ThemeToggle />
-        </div>
-      </div>
+    <>
+      {/* Desktop sidebar */}
+      {!isMobile && (
+        <div className="flex h-screen">
+          {/* Always visible sidebar */}
+          <div className="border-r bg-muted/40 flex flex-col items-center py-2 w-12">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="mb-4"
+            >
+              <Menu className="h-4 w-4" />
+              <span className="sr-only">Toggle Sidebar</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onChangeView("editor")}
+              className={cn(activeView === "editor" && "bg-accent")}
+            >
+              <Edit3 className="h-4 w-4" />
+              <span className="sr-only">Editor View</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onChangeView("graph")}
+              className={cn(activeView === "graph" && "bg-accent")}
+            >
+              <GitBranch className="h-4 w-4" />
+              <span className="sr-only">Graph View</span>
+            </Button>
+            <div className="mt-auto">
+              <ThemeToggle />
+            </div>
+          </div>
 
-      {/* Collapsible sidebar content */}
-      <div
-        className={cn(
-          "border-r bg-muted/40 flex flex-col transition-all duration-300",
-          isSidebarCollapsed ? "w-0 opacity-0 overflow-hidden" : "w-72 opacity-100",
-        )}
-      >
-        <div className="p-2 flex items-center justify-between border-b">
-          <h2 className="font-semibold text-lg">Silica Notes</h2>
-        </div>
-
-        <div className="p-2 border-b">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search notes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-            />
+          {/* Collapsible sidebar content */}
+          <div
+            className={cn(
+              "border-r bg-muted/40 flex flex-col transition-all duration-300",
+              isSidebarCollapsed ? "w-0 opacity-0 overflow-hidden" : "w-72 opacity-100",
+            )}
+          >
+            {sidebarContent}
           </div>
         </div>
+      )}
 
-        <ScrollArea className="flex-1">
-          <div className="p-2 space-y-1">
-            {filteredNotes.map((note) => (
-              <Button
-                key={note.id}
-                variant="ghost"
-                className={cn(
-                  "w-full justify-start text-left font-normal h-auto py-3",
-                  selectedNoteId === note.id && "bg-accent text-accent-foreground",
-                )}
-                onClick={() => onSelectNote(note.id)}
-              >
-                <div className="flex flex-col w-full gap-1 overflow-hidden">
-                  <div className="font-medium truncate">{note.title}</div>
-                  <div className="text-xs text-muted-foreground">{format(new Date(note.updatedAt), "MMM d, yyyy")}</div>
-                </div>
-              </Button>
-            ))}
+      {/* Mobile sidebar */}
+      {isMobile && (
+        <div className="fixed bottom-0 left-0 z-50 w-full border-t bg-background md:hidden">
+          <div className="flex items-center justify-around h-16">
+            <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(true)}>
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Menu</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onChangeView("editor")}
+              className={cn(activeView === "editor" && "bg-accent")}
+            >
+              <Edit3 className="h-5 w-5" />
+              <span className="sr-only">Editor View</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onChangeView("graph")}
+              className={cn(activeView === "graph" && "bg-accent")}
+            >
+              <GitBranch className="h-5 w-5" />
+              <span className="sr-only">Graph View</span>
+            </Button>
+            <ThemeToggle />
           </div>
-        </ScrollArea>
-
-        <div className="p-2 border-t">
-          <Button className="w-full" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            New Note
-          </Button>
         </div>
-      </div>
-    </div>
+      )}
+
+      {/* Mobile sidebar sheet */}
+      <Sheet open={isMobileMenuOpen && isMobile} onOpenChange={setIsMobileMenuOpen}>
+        <SheetContent side="left" className="p-0 w-[80%] sm:max-w-sm" >
+          <div className="flex flex-col h-full">{sidebarContent}</div>
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }
 

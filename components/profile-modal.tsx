@@ -16,7 +16,7 @@ interface ProfileModalProps {
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-w-[95vw] rounded-lg">
         <DialogHeader>
           <DialogTitle>Profile</DialogTitle>
           <DialogDescription>
@@ -29,8 +29,10 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
           <p>Email: john@example.com</p>
           <p>Role: Admin</p>
         </div>
-        <DialogFooter>
-          <Button onClick={onClose}>Close</Button>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <Button onClick={onClose} className="w-full sm:w-auto">
+            Close
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
