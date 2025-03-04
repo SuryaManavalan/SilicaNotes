@@ -47,7 +47,10 @@ export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onCha
   const sidebarContent = (
     <>
       <div className="p-2 flex items-center justify-between border-b">
-        <h2 className="font-semibold text-lg">Notes</h2>
+        <div className="flex items-center">
+          <img src="/logo.png" alt="Logo" className="h-6 w-6 mr-2" />
+          <h2 className="font-semibold text-lg">Silica Notes</h2>
+        </div>
       </div>
 
       <div className="p-2 border-b">
@@ -58,7 +61,7 @@ export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onCha
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-8"
-            autoFocus = {false}
+            autoFocus={false}
           />
         </div>
       </div>
