@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Search, Plus, Menu, Edit3, GitBranch } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { format } from "date-fns"
+import { format, isValid } from "date-fns"
 import { ThemeToggle } from "./theme-toggle"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 
@@ -83,7 +83,9 @@ export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onCha
             >
               <div className="flex flex-col w-full gap-1 overflow-hidden">
                 <div className="font-medium truncate">{note.title}</div>
-                <div className="text-xs text-muted-foreground">{format(new Date(note.updatedAt), "MMM d, yyyy")}</div>
+                <div className="text-xs text-muted-foreground">
+                  {isValid(new Date(note.updated_at)) ? format(new Date(note.updated_at), "MMM d, yyyy") : "Invalid date"}
+                </div>
               </div>
             </Button>
           ))}

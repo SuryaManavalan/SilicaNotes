@@ -52,7 +52,7 @@ export function NoteEditor({ note, updateNote }: NoteEditorProps) {
       updateNote({
         ...note,
         content: editor.getHTML(),
-        updatedAt: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
     },
     editorProps: {
@@ -62,11 +62,18 @@ export function NoteEditor({ note, updateNote }: NoteEditorProps) {
     },
   })
 
+  // Update editor content when note prop changes
+  useEffect(() => {
+    if (editor && editor.getHTML() !== note.content) {
+      editor.commands.setContent(note.content)
+    }
+  }, [note.content, editor])
+
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateNote({
       ...note,
       title: e.target.value,
-      updatedAt: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     })
   }
 
