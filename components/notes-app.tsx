@@ -9,6 +9,7 @@ import { NoteEditor } from "./note-editor"
 import { GraphView } from "./graph-view"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { ProfileModal } from "./profile-modal"
 
 interface NotesAppProps {
@@ -21,6 +22,7 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
   const [activeView, setActiveView] = useState<string>("editor")
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   // Check if we're on mobile
   useEffect(() => {
@@ -38,6 +40,25 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
     return () => window.removeEventListener("resize", checkIfMobile)
   }, [])
 
+  useEffect(() => {
+    const checkNotesLoaded = () => {
+      if (notes && notes.length > 0) {
+        setIsLoading(false)
+      }
+    }
+
+    // Check initially
+    checkNotesLoaded()
+
+    // Set a maximum timeout of 10 seconds
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false)
+    }, 10000)
+
+    // Cleanup timeout
+    return () => clearTimeout(timeoutId)
+  }, [notes])
+
   const selectedNote = notes.find((note) => note.id === selectedNoteId) || notes[0]
 
   const updateNote = (updatedNote: Note) => {
@@ -53,6 +74,7 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
         onSelectNote={setSelectedNoteId}
         activeView={activeView}
         onChangeView={setActiveView}
+        isLoading={isLoading}
       />
 
       {/* Main content area */}
@@ -66,8 +88,28 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
           </Button>
         </header>
         <div className="flex-1 overflow-auto pb-16 md:pb-0">
-          {activeView === "editor" && selectedNote && <NoteEditor note={selectedNote} updateNote={updateNote} />}
-          {activeView === "graph" && <GraphView notes={notes} />}
+          {isLoading ? (
+            // Show skeleton placeholders when loading
+            <div className="p-4 space-y-8">
+              <Skeleton className="h-8 w-1/2 rounded-md mb-4" />
+              <div className="p-4 space-y-4">
+                <Skeleton className="h-4 w-3/4 rounded-md" />
+                <Skeleton className="h-4 w-3/4 rounded-md" />
+                <Skeleton className="h-4 w-1/4 rounded-md" />
+                <Skeleton className="h-4 w-1/2 rounded-md" />
+                <Skeleton className="h-4 w-3/4 rounded-md" />
+                <Skeleton className="h-4 w-3/4 rounded-md" />
+                <Skeleton className="h-4 w-1/4 rounded-md" />
+                <Skeleton className="h-4 w-1/2 rounded-md" />
+              </div>
+
+            </div>
+          ) : (
+            <>
+              {activeView === "editor" && selectedNote && <NoteEditor note={selectedNote} updateNote={updateNote} />}
+              {activeView === "graph" && <GraphView notes={notes} />}
+            </>
+          )}
         </div>
       </div>
 

@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 import { format, isValid } from "date-fns"
 import { ThemeToggle } from "./theme-toggle"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useTheme } from "next-themes"
 
 interface SidebarProps {
@@ -18,9 +19,11 @@ interface SidebarProps {
   onSelectNote: (id: string) => void
   activeView: string
   onChangeView: (view: string) => void
+  isLoading: boolean
 }
 
-export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onChangeView }: SidebarProps) {
+export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onChangeView, isLoading }: SidebarProps) {
+
   const [searchQuery, setSearchQuery] = useState("")
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -73,27 +76,39 @@ export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onCha
 
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
-          {filteredNotes.map((note) => (
-            <Button
-              key={note.id}
-              variant="ghost"
-              className={cn(
-                "w-full justify-start text-left font-normal h-auto py-3",
-                selectedNoteId === note.id && "bg-accent text-accent-foreground",
-              )}
-              onClick={() => {
-                onSelectNote(note.id)
-                if (isMobile) setIsMobileMenuOpen(false)
-              }}
-            >
-              <div className="flex flex-col w-full gap-1 overflow-hidden">
-                <div className="font-medium truncate">{note.title}</div>
-                <div className="text-xs text-muted-foreground">
-                  {isValid(new Date(note.updated_at)) ? format(new Date(note.updated_at), "MMM d, yyyy") : "Invalid date"}
+          {isLoading ? (
+            // Show skeleton placeholders when loading
+            <div className="space-y-8">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="space-y-2">
+                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-4 w-[200px]" />
                 </div>
+              ))}
+            </div>
+          ) : (
+            filteredNotes.map((note) => (
+          <Button
+            key={note.id}
+            variant="ghost"
+            className={cn(
+              "w-full justify-start text-left font-normal h-auto py-3",
+              selectedNoteId === note.id && "bg-accent text-accent-foreground",
+            )}
+            onClick={() => {
+              onSelectNote(note.id)
+              if (isMobile) setIsMobileMenuOpen(false)
+            }}
+          >
+            <div className="flex flex-col w-full gap-1 overflow-hidden">
+              <div className="font-medium truncate">{note.title}</div>
+              <div className="text-xs text-muted-foreground">
+                {isValid(new Date(note.updated_at)) ? format(new Date(note.updated_at), "MMM d, yyyy") : "Invalid date"}
               </div>
-            </Button>
-          ))}
+            </div>
+          </Button>
+          ))
+          )}
         </div>
       </ScrollArea>
 
