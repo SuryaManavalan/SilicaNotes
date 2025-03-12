@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 import { format, isValid } from "date-fns"
 import { ThemeToggle } from "./theme-toggle"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { useTheme } from "next-themes"
 
 interface SidebarProps {
   notes: Note[]
@@ -24,6 +25,10 @@ export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onCha
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+
+  const { theme } = useTheme()
+
+  const logoSrc = theme === "dark" ? "/logo_dark.png" : "/logo_light.png"
 
   // Check if we're on mobile
   useEffect(() => {
@@ -48,8 +53,8 @@ export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onCha
     <>
       <div className="p-2 flex items-center justify-between border-b">
         <div className="flex items-center">
-          <img src="/logo.png" alt="Logo" className="h-6 w-6 mr-2" />
-          <h2 className="font-semibold text-lg">Silica Notes</h2>
+          <img src={logoSrc} alt="Logo" className="h-8 w-8 mr-2" />
+          <h2 className="font-semibold text-xl">Silica Notes</h2>
         </div>
       </div>
 
