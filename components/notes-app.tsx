@@ -147,7 +147,7 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
             </div>
           ) : (
             <>
-              {activeView === "editor" && selectedNote && <NoteEditor note={selectedNote} updateNote={updateNote} />}
+              {activeView === "editor" && selectedNote && <NoteEditor note={selectedNote} updateNote={updateNote} saving={saving} />}
               {activeView === "graph" && <GraphView notes={notes} />}
             </>
           )}
@@ -156,17 +156,19 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
 
       <ProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
 
-      {/* Saving status */}
-      <div className="fixed bottom-4 right-4 flex items-center space-x-2 text-gray-500 text-sm">
-        {saving ? (
-          <>
-            <Loader2 className="animate-spin w-4 h-4" />
-            <span>Saving...</span>
-          </>
-        ) : (
-          <span>Changes saved</span>
-        )}
-      </div>
+      {/* Saving status for desktop */}
+      {!isMobile && (
+        <div className="fixed bottom-4 right-4 flex items-center space-x-2 text-gray-500 text-sm">
+          {saving ? (
+            <>
+              <Loader2 className="animate-spin w-4 h-4" />
+              <span>Saving...</span>
+            </>
+          ) : (
+            <span>Changes saved</span>
+          )}
+        </div>
+      )}
     </div>
   )
 }

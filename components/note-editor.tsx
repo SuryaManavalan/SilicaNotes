@@ -12,13 +12,15 @@ import { Bold, Italic, List, ListOrdered, Heading1, Heading2, Heading3, Undo, Re
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Loader2 } from "lucide-react"
 
 interface NoteEditorProps {
   note: Note
   updateNote: (note: Note) => void
+  saving: boolean // Add saving prop
 }
 
-export function NoteEditor({ note, updateNote }: NoteEditorProps) {
+export function NoteEditor({ note, updateNote, saving }: NoteEditorProps) {
   const [isMobile, setIsMobile] = useState(false)
 
   // Check if we're on mobile
@@ -197,14 +199,32 @@ export function NoteEditor({ note, updateNote }: NoteEditorProps) {
           )}
 
           {/* Show dropdown menu on mobile */}
-          {isMobile && mobileFormattingMenu}
+          {isMobile && (
+            <>
+              {mobileFormattingMenu}
+            </>
+          )}
+
+          {/* Show saving status on mobile */}
+          {isMobile && (
+            <div className="flex items-center space-x-1 text-gray-500 text-xs ml-auto mr-3">
+              {saving ? (
+                <>
+                  <Loader2 className="animate-spin w-3 h-3" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <span>Changes saved</span>
+              )}
+            </div>
+          )}
 
           <Button
             variant="ghost"
             size="icon"
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
-            className="h-8 w-8 ml-auto"
+            className="h-8 w-8"
           >
             <Undo className="h-4 w-4" />
             <span className="sr-only">Undo</span>
