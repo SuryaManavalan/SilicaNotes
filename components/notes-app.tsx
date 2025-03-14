@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import type { Note } from "@/lib/types"
 import { Sidebar } from "./sidebar"
 import { NoteEditor } from "./note-editor"
@@ -11,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ProfileModal } from "./profile-modal"
+import { Loader2 } from 'lucide-react'
 
 interface NotesAppProps {
   notes: Note[]
@@ -23,6 +23,7 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
   // Check if we're on mobile
   useEffect(() => {
@@ -61,9 +62,49 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
 
   const selectedNote = notes.find((note) => note.id === selectedNoteId) || notes[0]
 
+  const updateNoteTimers = useRef(new Map<string, NodeJS.Timeout>())
+
   const updateNote = (updatedNote: Note) => {
     setNotes(notes.map((note) => (note.id === updatedNote.id ? updatedNote : note)))
+
+    // Clear any existing timer for this note
+    if (updateNoteTimers.current.has(updatedNote.id)) {
+      clearTimeout(updateNoteTimers.current.get(updatedNote.id)!)
+    }
+
+    // Set a new five-second timer before updating the note in the database
+    const timerId = setTimeout(async () => {
+      console.log('Updating note:', updatedNote)
+      try {
+        const response = await fetch('/api/notes', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatedNote),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to update note')
+        }
+
+        const result = await response.json()
+        console.log('Note updated successfully:', result)
+      } catch (error) {
+        console.error('Error updating note:', error)
+      } finally {
+        updateNoteTimers.current.delete(updatedNote.id)
+        if (updateNoteTimers.current.size === 0) {
+          setSaving(false)
+        }
+      }
+    }, 5000)
+
+    // Store the new timer
+    updateNoteTimers.current.set(updatedNote.id, timerId)
+    setSaving(true)
   }
+
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -114,6 +155,18 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
       </div>
 
       <ProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+
+      {/* Saving status */}
+      <div className="fixed bottom-4 right-4 flex items-center space-x-2 text-gray-500 text-sm">
+        {saving ? (
+          <>
+            <Loader2 className="animate-spin w-4 h-4" />
+            <span>Saving...</span>
+          </>
+        ) : (
+          <span>Changes saved</span>
+        )}
+      </div>
     </div>
   )
 }
