@@ -20,9 +20,10 @@ interface SidebarProps {
   activeView: string
   onChangeView: (view: string) => void
   isLoading: boolean
+  onCreateNote: () => void
 }
 
-export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onChangeView, isLoading }: SidebarProps) {
+export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onChangeView, isLoading, onCreateNote }: SidebarProps) {
 
   const [searchQuery, setSearchQuery] = useState("")
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -113,7 +114,7 @@ export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onCha
       </ScrollArea>
 
       <div className="p-2 border-t">
-        <Button className="w-full" size="sm">
+        <Button className="w-full" size="sm" onClick={onCreateNote}>
           <Plus className="h-4 w-4 mr-2" />
           New Note
         </Button>

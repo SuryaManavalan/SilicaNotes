@@ -64,6 +64,14 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
 
   const updateNoteTimers = useRef(new Map<string, NodeJS.Timeout>())
 
+  const getLowestUnusedId = (notes: Note[]): string => {
+    let id = 0;
+    while (notes.some(note => note.id === id.toString())) {
+      id--;
+    }
+    return id.toString();
+  }
+
   const updateNote = (updatedNote: Note) => {
     setNotes(notes.map((note) => (note.id === updatedNote.id ? updatedNote : note)))
 
@@ -77,7 +85,7 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
       console.log('Updating note:', updatedNote)
       try {
         const response = await fetch('/api/notes', {
-          method: 'PUT',
+          method: updatedNote.id === "0" || parseInt(updatedNote.id) < 0 ? 'POST' : 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -90,6 +98,13 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
 
         const result = await response.json()
         console.log('Note updated successfully:', result)
+
+        // If the note is new, update its ID with the one from the database
+        if (updatedNote.id === "0" || parseInt(updatedNote.id) < 0) {
+          const newId = result.id
+          setNotes(notes.map((note) => (note.id === updatedNote.id ? { ...note, id: newId } : note)))
+          setSelectedNoteId(newId)
+        }
       } catch (error) {
         console.error('Error updating note:', error)
       } finally {
@@ -105,6 +120,18 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
     setSaving(true)
   }
 
+  const onCreateNote = () => {
+    const newNote: Note = {
+      id: getLowestUnusedId(notes),
+      title: "Untitled Note",
+      content: "",
+      updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    }
+    setNotes([newNote, ...notes])
+    setSelectedNoteId(newNote.id)
+    setActiveView("editor")
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -116,6 +143,7 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
         activeView={activeView}
         onChangeView={setActiveView}
         isLoading={isLoading}
+        onCreateNote={onCreateNote} // Pass the function to Sidebar
       />
 
       {/* Main content area */}
