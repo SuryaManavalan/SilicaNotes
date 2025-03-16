@@ -44,8 +44,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error('Error creating note:', error)
       res.status(500).json({ error: 'Error creating note' })
     }
+  } else if (req.method === 'DELETE') {
+    const { id } = req.body
+    if (!id) {
+      console.error('Missing required field: id')
+      return res.status(400).json({ error: 'Missing required field: id' })
+    }
+    try {
+      const [result] = await pool.query<ResultSetHeader>('DELETE FROM notes WHERE id = ?', [id])
+      if (result.affectedRows === 0) {
+        console.error('Note not found:', { id })
+        return res.status(404).json({ error: 'Note not found' })
+      }
+      res.status(200).json({ message: 'Note deleted successfully' })
+    } catch (error) {
+      console.error('Error deleting note:', error)
+      res.status(500).json({ error: 'Error deleting note' })
+    }
   } else {
-    res.setHeader('Allow', ['GET', 'PUT', 'POST'])
+    res.setHeader('Allow', ['GET', 'PUT', 'POST', 'DELETE'])
     res.status(405).end(`Method ${req.method} Not Allowed`)
   }
 }

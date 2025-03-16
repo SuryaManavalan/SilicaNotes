@@ -133,6 +133,30 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
     setActiveView("editor")
   }
 
+  const onDeleteNote = async (id: string) => {
+    try {
+      const response = await fetch('/api/notes', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete note')
+      }
+
+      const result = await response.json()
+      console.log('Note deleted successfully:', result)
+
+      setNotes(notes.filter((note) => note.id !== id))
+      setSelectedNoteId(notes[0]?.id || "")
+    } catch (error) {
+      console.error('Error deleting note:', error)
+    }
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
@@ -143,7 +167,8 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
         activeView={activeView}
         onChangeView={setActiveView}
         isLoading={isLoading}
-        onCreateNote={onCreateNote} // Pass the function to Sidebar
+        onCreateNote={onCreateNote}
+        onDeleteNote={onDeleteNote}
       />
 
       {/* Main content area */}
