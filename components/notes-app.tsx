@@ -201,7 +201,16 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
           ) : (
             <>
               {activeView === "editor" && selectedNote && <NoteEditor note={selectedNote} updateNote={updateNote} saving={saving} />}
-              {activeView === "graph" && <GraphView notes={notes} />}
+              {activeView === "graph" && (
+                <GraphView 
+                  notes={notes} 
+                  selectedNodeId={selectedNoteId}
+                  onNodeSelect={(nodeId) => {
+                    setSelectedNoteId(nodeId)
+                    setActiveView("editor") // Switch to editor when node is clicked
+                  }}
+                />
+              )}
             </>
           )}
         </div>
