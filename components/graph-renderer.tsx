@@ -293,7 +293,7 @@ export function GraphRenderer({
         // Initialize D3 Force Simulation
         const simulation = d3.forceSimulation(nodesRef.current)
           .force('charge', d3.forceManyBody().strength(-40))
-          .force('link', d3.forceLink(linksRef.current).id((d: any) => d.id).distance(100))
+          .force('link', d3.forceLink(linksRef.current).id((d: any) => d.id).distance(165))
           .force('center', d3.forceCenter(width / 2, height / 2))
           .on('tick', updatePositions)
 
@@ -514,7 +514,7 @@ export function GraphRenderer({
 
     // Update link distances based on zoom level
     if (simulationRef.current) {
-      const linkDistance = 100 * zoomLevel // Base distance of 100, scaled by zoom
+      const linkDistance = 165 * zoomLevel // Base distance of 165, scaled by zoom
       const linkForce = simulationRef.current.force('link') as d3.ForceLink<GraphNode, GraphLink>
       if (linkForce) {
         linkForce.distance(linkDistance)
