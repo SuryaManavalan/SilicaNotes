@@ -8,7 +8,7 @@ import Placeholder from "@tiptap/extension-placeholder"
 import type { Note } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Bold, Italic, List, ListOrdered, Heading1, Heading2, Heading3, Undo, Redo, MoreHorizontal } from "lucide-react"
+import { Bold, Italic, List, ListOrdered, Heading1, Heading2, Heading3, Undo, Redo, MoreHorizontal, Save } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -17,10 +17,12 @@ import { Loader2 } from "lucide-react"
 interface NoteEditorProps {
   note: Note
   updateNote: (note: Note) => void
-  saving: boolean // Add saving prop
+  saving: boolean
+  isAuthenticated: boolean
+  onSave?: () => void
 }
 
-export function NoteEditor({ note, updateNote, saving }: NoteEditorProps) {
+export function NoteEditor({ note, updateNote, saving, isAuthenticated, onSave }: NoteEditorProps) {
   const [isMobile, setIsMobile] = useState(false)
 
   // Check if we're on mobile
@@ -38,6 +40,21 @@ export function NoteEditor({ note, updateNote, saving }: NoteEditorProps) {
     // Cleanup
     return () => window.removeEventListener("resize", checkIfMobile)
   }, [])
+
+  // Add keyboard shortcut for manual save
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault()
+        if (onSave && isAuthenticated) {
+          onSave()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onSave, isAuthenticated])
 
   const editor = useEditor({
     extensions: [
@@ -64,12 +81,16 @@ export function NoteEditor({ note, updateNote, saving }: NoteEditorProps) {
     },
   })
 
-  // Update editor content when note prop changes
+  // Update editor content when note changes (but not during typing)
   useEffect(() => {
-    if (editor && editor.getHTML() !== note.content) {
-      editor.commands.setContent(note.content)
+    if (editor && note.content !== undefined) {
+      const currentContent = editor.getHTML()
+      // Only update if the content is significantly different (not just minor formatting)
+      if (currentContent !== note.content && !editor.isFocused) {
+        editor.commands.setContent(note.content)
+      }
     }
-  }, [note.content, editor])
+  }, [note.id, editor]) // Only trigger when note ID changes (switching notes)
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateNote({
@@ -205,16 +226,33 @@ export function NoteEditor({ note, updateNote, saving }: NoteEditorProps) {
             </>
           )}
 
+          {/* Manual save button and status */}
+          {isAuthenticated && onSave && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onSave}
+              disabled={saving}
+              className="h-8 w-8 ml-auto"
+              title="Save now (Ctrl+S)"
+            >
+              {saving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save className="h-4 w-4" />}
+              <span className="sr-only">Save</span>
+            </Button>
+          )}
+
           {/* Show saving status on mobile */}
           {isMobile && (
-            <div className="flex items-center space-x-1 text-gray-500 text-xs ml-auto mr-3">
-              {saving ? (
+            <div className="flex items-center space-x-1 text-gray-500 text-xs">
+              {!isAuthenticated ? (
+                <span className="text-amber-600">Preview</span>
+              ) : saving ? (
                 <>
                   <Loader2 className="animate-spin w-3 h-3" />
                   <span>Saving...</span>
                 </>
               ) : (
-                <span>Changes saved</span>
+                <span>Saved</span>
               )}
             </div>
           )}

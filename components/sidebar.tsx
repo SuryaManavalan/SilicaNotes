@@ -23,9 +23,11 @@ interface SidebarProps {
   isLoading: boolean
   onCreateNote: () => void
   onDeleteNote: (id: string) => void
+  isAuthenticated: boolean
+  isAuthLoading: boolean
 }
 
-export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onChangeView, isLoading, onCreateNote, onDeleteNote }: SidebarProps) {
+export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onChangeView, isLoading, onCreateNote, onDeleteNote, isAuthenticated, isAuthLoading }: SidebarProps) {
 
   const [searchQuery, setSearchQuery] = useState("")
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
