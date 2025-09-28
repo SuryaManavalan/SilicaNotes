@@ -73,6 +73,7 @@ model Note {
   content   String?  @db.Text
   userId    String?  // Optional for now, will be required after auth is implemented
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  links     Json?    // Array of connected note IDs stored as JSON
   createdAt DateTime @default(now()) @db.DateTime(6)
   updatedAt DateTime @updatedAt @db.DateTime(6)
 }

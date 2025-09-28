@@ -75,3 +75,83 @@
   }
 }
 
+/* Editor Styles */
+.ProseMirror {
+  outline: none;
+}
+
+.ProseMirror .obsidian-link-widget {
+  display: inline-block;
+}
+
+/* Obsidian link badge styling - matches shadcn Badge component exactly */
+.obsidian-link-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  outline: none;
+}
+
+.obsidian-link-badge:focus {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Collapsed state - subtle outline variant */
+.obsidian-link-collapsed {
+  border-radius: 9999px; /* rounded-full */
+  background-color: transparent;
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary) / 0.3);
+  padding: 0.0625rem 0.5rem; /* reduced vertical padding */
+  position: relative;
+  overflow: hidden;
+  line-height: 1.2;
+}
+
+.obsidian-link-collapsed:hover {
+  background-color: hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary) / 0.5);
+}
+
+/* Show only the display text using CSS content */
+.obsidian-link-collapsed::before {
+  content: attr(data-display-text);
+  position: relative;
+  z-index: 2;
+}
+
+/* Hide the original [[syntax]] text when collapsed */
+.obsidian-link-collapsed {
+  color: transparent;
+  font-size: 0;
+}
+
+.obsidian-link-collapsed::before {
+  color: hsl(var(--primary));
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Editing state - very subtle muted variant */
+.obsidian-link-editing {
+  border-radius: 9999px; /* rounded-full */
+  background-color: hsl(var(--muted) / 0.3);
+  color: hsl(var(--muted-foreground));
+  border: 1px dashed hsl(var(--border));
+  padding: 0.0625rem 0.5rem; /* reduced vertical padding */
+  line-height: 1.2;
+}
+
+.obsidian-link-editing:hover {
+  background-color: hsl(var(--muted) / 0.5);
+}
+

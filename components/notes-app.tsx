@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import type { Note } from "@/lib/types"
 import { Sidebar } from "./sidebar"
@@ -10,6 +10,7 @@ import { GraphView } from "./graph-view"
 import { AuthButton } from "./auth-button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Loader2 } from 'lucide-react'
+import { processNoteLinks } from "@/lib/obsidian-links"
 
 interface NotesAppProps {
   notes: Note[]
@@ -111,7 +112,7 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
     return id.toString();
   }
 
-  const updateNote = (updatedNote: Note) => {
+  const updateNote = useCallback((updatedNote: Note) => {
     // Always update local state for immediate UI feedback
     setNotes(currentNotes => currentNotes.map((note) => (note.id === updatedNote.id ? updatedNote : note)))
 
@@ -129,13 +130,26 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
     // Set a longer timer (10 seconds) to allow for continuous typing
     const timerId = setTimeout(async () => {
       console.log('Saving note to server:', updatedNote.id)
+      
+      // Process Obsidian-style links before saving
+      const extractedLinks = processNoteLinks(updatedNote, notes)
+      const noteWithLinks = {
+        ...updatedNote,
+        links: extractedLinks
+      }
+      
+      // Update local state with processed links
+      setNotes(currentNotes => currentNotes.map((note) => 
+        note.id === updatedNote.id ? noteWithLinks : note
+      ))
+      
       try {
         const response = await fetch('/api/notes', {
           method: updatedNote.id === "0" || parseInt(updatedNote.id) < 0 ? 'POST' : 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(updatedNote),
+          body: JSON.stringify(noteWithLinks),
         })
 
         if (!response.ok) {
@@ -166,7 +180,7 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
     // Store the new timer
     updateNoteTimers.current.set(updatedNote.id, timerId)
     setSaving(true)
-  }
+  }, [isAuthenticated, notes, setNotes, setSelectedNoteId, setSaving])
 
   const saveNoteImmediately = async (noteToSave: Note) => {
     if (!isAuthenticated) return
@@ -179,13 +193,25 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
 
     setSaving(true)
     
+    // Process Obsidian-style links before saving
+    const extractedLinks = processNoteLinks(noteToSave, notes)
+    const noteWithLinks = {
+      ...noteToSave,
+      links: extractedLinks
+    }
+    
+    // Update local state with processed links
+    setNotes(currentNotes => currentNotes.map((note) => 
+      note.id === noteToSave.id ? noteWithLinks : note
+    ))
+    
     try {
       const response = await fetch('/api/notes', {
         method: noteToSave.id === "0" || parseInt(noteToSave.id) < 0 ? 'POST' : 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(noteToSave),
+        body: JSON.stringify(noteWithLinks),
       })
 
       if (!response.ok) {
@@ -215,6 +241,7 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
       id: getLowestUnusedId(notes),
       title: isAuthenticated ? "Untitled Note" : "Preview Note (Sign in to save)",
       content: "",
+      links: [],
       updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
     }
@@ -308,6 +335,21 @@ export function NotesApp({ notes, setNotes }: NotesAppProps) {
                   saving={saving} 
                   isAuthenticated={isAuthenticated}
                   onSave={() => saveNoteImmediately(selectedNote)}
+                  onNavigateToNote={(noteTitle) => {
+                    console.log('🎯 Attempting to navigate to:', noteTitle)
+                    // Find the note with matching title
+                    const targetNote = notes.find(n => 
+                      n.title.toLowerCase().trim() === noteTitle.toLowerCase().trim()
+                    )
+                    if (targetNote) {
+                      console.log('✅ Found target note:', targetNote.title, 'ID:', targetNote.id)
+                      setSelectedNoteId(targetNote.id)
+                    } else {
+                      console.log(`❌ Note not found: "${noteTitle}"`)
+                      console.log('📋 Available notes:', notes.map(n => n.title))
+                    }
+                  }}
+                  allNotes={notes}
                 />
               )}
               {activeView === "graph" && (

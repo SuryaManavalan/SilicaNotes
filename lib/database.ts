@@ -35,13 +35,14 @@ export async function getNotes(userId?: string) {
   }
 }
 
-export async function createNote(title: string, content: string, userId?: string) {
+export async function createNote(title: string, content: string, userId?: string, links?: number[]) {
   try {
     return await prisma.note.create({
       data: {
         title,
         content,
         userId, // Will be null if not provided (for unauthenticated users)
+        links: links || [], // Default to empty array if not provided
       },
     });
   } catch (error) {
@@ -50,7 +51,7 @@ export async function createNote(title: string, content: string, userId?: string
   }
 }
 
-export async function updateNote(id: number, title: string, content: string, userId?: string) {
+export async function updateNote(id: number, title: string, content: string, userId?: string, links?: number[]) {
   try {
     // First check if the note exists and user has permission to edit it
     const existingNote = await prisma.note.findFirst({
@@ -72,6 +73,7 @@ export async function updateNote(id: number, title: string, content: string, use
       data: { 
         title, 
         content,
+        ...(links !== undefined && { links }),
         // If updating a null userId note and user is authenticated, assign it to them
         ...(existingNote.userId === null && userId && { userId })
       },
@@ -104,6 +106,71 @@ export async function deleteNote(id: number, userId?: string) {
     });
   } catch (error) {
     console.error('Error deleting note:', error);
+    throw error;
+  }
+}
+
+// Link management functions
+export async function addNoteLink(noteId: number, linkedNoteId: number, userId?: string) {
+  try {
+    const existingNote = await prisma.note.findFirst({
+      where: {
+        id: noteId,
+        OR: [
+          { userId: userId },
+          { userId: null },
+        ]
+      }
+    });
+
+    if (!existingNote) {
+      throw new Error('Note not found or no permission to edit');
+    }
+
+    const currentLinks = Array.isArray((existingNote as any).links) ? (existingNote as any).links as number[] : [];
+    
+    // Add link if it doesn't already exist
+    if (!currentLinks.includes(linkedNoteId)) {
+      const updatedLinks = [...currentLinks, linkedNoteId];
+      
+      return await prisma.note.update({
+        where: { id: noteId },
+        data: { links: updatedLinks } as any,
+      });
+    }
+
+    return existingNote;
+  } catch (error) {
+    console.error('Error adding note link:', error);
+    throw error;
+  }
+}
+
+export async function removeNoteLink(noteId: number, linkedNoteId: number, userId?: string) {
+  try {
+    const existingNote = await prisma.note.findFirst({
+      where: {
+        id: noteId,
+        OR: [
+          { userId: userId },
+          { userId: null },
+        ]
+      }
+    });
+
+    if (!existingNote) {
+      throw new Error('Note not found or no permission to edit');
+    }
+
+    const currentLinks = Array.isArray((existingNote as any).links) ? (existingNote as any).links as number[] : [];
+    const updatedLinks = currentLinks.filter(id => id !== linkedNoteId);
+    
+    return await prisma.note.update({
+      where: { id: noteId },
+      data: { links: updatedLinks } as any,
+    });
+  } catch (error) {
+    console.error('Error removing note link:', error);
     throw error;
   }
 }

@@ -17,6 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         id: note.id.toString(),
         title: note.title,
         content: note.content || '',
+        links: Array.isArray((note as any).links) ? (note as any).links : [],
         created_at: note.createdAt.toISOString(),
         updated_at: note.updatedAt.toISOString(),
       }))
@@ -27,17 +28,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.status(500).json({ error: 'Error fetching notes' })
     }
   } else if (req.method === 'PUT') {
-    const { id, title, content } = req.body
+    const { id, title, content, links } = req.body
     if (!id || title === undefined || content === undefined) {
       return res.status(400).json({ error: 'Missing required fields' })
     }
     try {
-      const updatedNote = await updateNote(parseInt(id), title, content, userId)
+      const updatedNote = await updateNote(parseInt(id), title, content, userId, links)
       
       const transformedNote = {
         id: updatedNote.id.toString(),
         title: updatedNote.title,
         content: updatedNote.content || '',
+        links: Array.isArray((updatedNote as any).links) ? (updatedNote as any).links : [],
         created_at: updatedNote.createdAt.toISOString(),
         updated_at: updatedNote.updatedAt.toISOString(),
       }
@@ -48,17 +50,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.status(500).json({ error: 'Error updating note' })
     }
   } else if (req.method === 'POST') {
-    const { title, content } = req.body
+    const { title, content, links } = req.body
     if (title === undefined || content === undefined) {
       return res.status(400).json({ error: 'Missing required fields' })
     }
     try {
-      const newNote = await createNote(title, content, userId)
+      const newNote = await createNote(title, content, userId, links)
       
       const transformedNote = {
         id: newNote.id.toString(),
         title: newNote.title,
         content: newNote.content || '',
+        links: Array.isArray((newNote as any).links) ? (newNote as any).links : [],
         created_at: newNote.createdAt.toISOString(),
         updated_at: newNote.updatedAt.toISOString(),
       }

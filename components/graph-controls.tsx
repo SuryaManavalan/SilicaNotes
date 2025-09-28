@@ -35,6 +35,9 @@ export function GraphControls({
         <div className="text-xs text-muted-foreground">
           {nodeCount} notes • {linkCount} connections • {Math.round(zoomLevel * 100)}% zoom
         </div>
+        <div className="text-xs text-muted-foreground">
+          Mode: {useRealConnections ? "Database Links" : "Random Links"}
+        </div>
         <div className="flex gap-2">
           <Button
             size="sm"
@@ -74,7 +77,7 @@ export function GraphControls({
             {useRealConnections ? (
               <>
                 <Link className="h-3 w-3 mr-1" />
-                Smart
+                Database
               </>
             ) : (
               <>

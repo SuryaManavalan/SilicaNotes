@@ -8,11 +8,15 @@ import Placeholder from "@tiptap/extension-placeholder"
 import type { Note } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Bold, Italic, List, ListOrdered, Heading1, Heading2, Heading3, Undo, Redo, MoreHorizontal, Save } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Bold, Italic, List, ListOrdered, Heading1, Heading2, Heading3, Undo, Redo, MoreHorizontal, Save, Link } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Loader2 } from "lucide-react"
+import { extractObsidianLinks } from "@/lib/obsidian-links"
+import { ObsidianLinkSimple } from "@/lib/extensions/obsidian-link-decoration"
+import { TipsModal } from "./tips-modal"
 
 interface NoteEditorProps {
   note: Note
@@ -20,10 +24,15 @@ interface NoteEditorProps {
   saving: boolean
   isAuthenticated: boolean
   onSave?: () => void
+  onNavigateToNote?: (noteTitle: string) => void
+  allNotes?: Note[]
 }
 
-export function NoteEditor({ note, updateNote, saving, isAuthenticated, onSave }: NoteEditorProps) {
+export function NoteEditor({ note, updateNote, saving, isAuthenticated, onSave, onNavigateToNote, allNotes = [] }: NoteEditorProps) {
   const [isMobile, setIsMobile] = useState(false)
+  const [detectedLinks, setDetectedLinks] = useState<string[]>([])
+  const [showTipsModal, setShowTipsModal] = useState(false)
+  const [currentTipId, setCurrentTipId] = useState<string | undefined>()
 
   // Check if we're on mobile
   useEffect(() => {
@@ -56,6 +65,42 @@ export function NoteEditor({ note, updateNote, saving, isAuthenticated, onSave }
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [onSave, isAuthenticated])
 
+  // Stable callback for update function
+  const handleUpdate = useCallback(({ editor }: { editor: any }) => {
+    const content = editor.getHTML()
+    const updatedNote: Note = {
+      ...note,
+      content,
+      updated_at: new Date().toISOString(),
+    }
+    updateNote(updatedNote)
+  }, [updateNote, note])
+
+  // Handle navigation from Obsidian links
+  useEffect(() => {
+    const handleNavigation = (e: CustomEvent) => {
+      const { noteTitle } = e.detail
+      console.log('📡 Navigation event received:', noteTitle)
+      console.log('🔍 Available notes:', allNotes.map(n => n.title))
+      onNavigateToNote?.(noteTitle)
+    }
+
+    const handleShowTip = (e: CustomEvent) => {
+      const { tipId } = e.detail
+      console.log('💡 Tip requested:', tipId)
+      setCurrentTipId(tipId)
+      setShowTipsModal(true)
+    }
+    
+    window.addEventListener('obsidian-link-navigate', handleNavigation as EventListener)
+    window.addEventListener('show-obsidian-tip', handleShowTip as EventListener)
+    
+    return () => {
+      window.removeEventListener('obsidian-link-navigate', handleNavigation as EventListener)
+      window.removeEventListener('show-obsidian-tip', handleShowTip as EventListener)
+    }
+  }, [onNavigateToNote, allNotes])
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -63,23 +108,18 @@ export function NoteEditor({ note, updateNote, saving, isAuthenticated, onSave }
         levels: [1, 2, 3],
       }),
       Placeholder.configure({
-        placeholder: "Start writing...",
+        placeholder: "Start writing... Use [[Note Title]] to link to other notes",
       }),
+      ObsidianLinkSimple,
     ],
     content: note.content,
-    onUpdate: ({ editor }) => {
-      updateNote({
-        ...note,
-        content: editor.getHTML(),
-        updated_at: new Date().toISOString(),
-      })
-    },
+    onUpdate: handleUpdate,
     editorProps: {
       attributes: {
         class: "prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[300px]",
       },
     },
-  })
+  }, [note.id]) // Only re-create editor when note ID changes
 
   // Update editor content when note changes (but not during typing)
   useEffect(() => {
@@ -91,6 +131,16 @@ export function NoteEditor({ note, updateNote, saving, isAuthenticated, onSave }
       }
     }
   }, [note.id, editor]) // Only trigger when note ID changes (switching notes)
+
+  // Update detected links when content changes
+  useEffect(() => {
+    if (note.content) {
+      const links = extractObsidianLinks(note.content)
+      setDetectedLinks(links)
+    } else {
+      setDetectedLinks([])
+    }
+  }, [note.content])
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateNote({
@@ -226,12 +276,34 @@ export function NoteEditor({ note, updateNote, saving, isAuthenticated, onSave }
             </>
           )}
 
+          {/* Link count indicator */}
+          {detectedLinks.length > 0 && (
+            <Badge 
+              variant="outline"
+              className="flex items-center space-x-1 text-xs h-8 px-2 cursor-help hover:bg-accent/50 transition-colors"
+              title={`${detectedLinks.length} Obsidian links detected: ${detectedLinks.join(', ')}`}
+            >
+              <Link className="h-3 w-3" />
+              <span>{detectedLinks.length}</span>
+            </Badge>
+          )}
+
+
+
           {/* Manual save button and status */}
           {isAuthenticated && onSave && (
             <Button
               variant="ghost"
               size="icon"
-              onClick={onSave}
+              onClick={() => {
+                if (editor) {
+                  // Convert [[syntax]] to widgets before saving
+                  const tr = editor.state.tr
+                  tr.setMeta('convertObsidianLinks', true)
+                  editor.view.dispatch(tr)
+                }
+                onSave()
+              }}
               disabled={saving}
               className="h-8 w-8 ml-auto"
               title="Save now (Ctrl+S)"
@@ -280,6 +352,12 @@ export function NoteEditor({ note, updateNote, saving, isAuthenticated, onSave }
         </div>
         <EditorContent editor={editor} className="p-4" />
       </div>
+
+      <TipsModal 
+        isOpen={showTipsModal}
+        onClose={() => setShowTipsModal(false)}
+        initialTipId={currentTipId}
+      />
     </div>
   )
 }

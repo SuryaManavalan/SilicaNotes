@@ -48,8 +48,32 @@ export function useGraphData({
     const links: GraphLink[] = []
     let activeConnections = connections
 
-    // If using real connections and no manual connections exist, analyze notes
-    if (useRealConnections && connections.length === 0 && nodes.length > 1) {
+    // First, try to use stored links from the database
+    const dbConnections: NoteConnection[] = []
+    notes.forEach(note => {
+      if (note.links && Array.isArray(note.links)) {
+        note.links.forEach(linkedNoteId => {
+          // Only add if the linked note exists and avoid duplicates
+          const targetNote = notes.find(n => parseInt(n.id) === linkedNoteId)
+          if (targetNote && !dbConnections.some(conn => 
+            (conn.sourceId === note.id && conn.targetId === targetNote.id) ||
+            (conn.sourceId === targetNote.id && conn.targetId === note.id)
+          )) {
+            dbConnections.push({
+              sourceId: note.id,
+              targetId: targetNote.id
+            })
+          }
+        })
+      }
+    })
+
+    // Use database connections if available
+    if (dbConnections.length > 0) {
+      activeConnections = dbConnections
+    }
+    // If using real connections and no manual/db connections exist, analyze notes
+    else if (useRealConnections && connections.length === 0 && nodes.length > 1) {
       activeConnections = GraphUtils.combineConnections(
         GraphUtils.extractConnections(notes),
         GraphUtils.findSharedKeywords(notes)

@@ -17,7 +17,7 @@ interface GraphViewProps {
 export function GraphView({ notes, selectedNodeId, onNodeSelect }: GraphViewProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [physicsEnabled, setPhysicsEnabled] = useState(true)
-  const [useRealConnections, setUseRealConnections] = useState(false)
+  const [useRealConnections, setUseRealConnections] = useState(true) // Changed to true - prioritize database links
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
   const [zoomLevel, setZoomLevel] = useState(1)
   const containerRef = useRef<HTMLDivElement>(null)

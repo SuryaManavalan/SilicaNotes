@@ -5,7 +5,7 @@ import type { Note } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Search, Plus, Menu, Edit3, GitBranch, Trash2, Filter, ArrowLeft, Trash, CalendarArrowDown, CalendarArrowUp, ArrowDownAZ, ArrowUpAZ } from "lucide-react"
+import { Search, Plus, Menu, Edit3, GitBranch, Trash2, Filter, ArrowLeft, Trash, CalendarArrowDown, CalendarArrowUp, ArrowDownAZ, ArrowUpAZ, HelpCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { format, isValid } from "date-fns"
 import { ThemeToggle } from "./theme-toggle"
@@ -13,6 +13,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTheme } from "next-themes"
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { TipsModal } from "./tips-modal"
 
 interface SidebarProps {
   notes: Note[]
@@ -38,6 +39,7 @@ export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onCha
   const [activeInput, setActiveInput] = useState<"search" | "filter" | null>(null)
   const [showDeleteIcons, setShowDeleteIcons] = useState(false)
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "alphaAsc" | "alphaDesc">("asc")
+  const [showTipsModal, setShowTipsModal] = useState(false)
 
   const { theme } = useTheme()
 
@@ -250,7 +252,16 @@ export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onCha
               <GitBranch className="h-4 w-4" />
               <span className="sr-only">Graph View</span>
             </Button>
-            <div className="mt-auto">
+            <div className="mt-auto space-y-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowTipsModal(true)}
+                title="Tips & Help"
+              >
+                <HelpCircle className="h-4 w-4" />
+                <span className="sr-only">Tips & Help</span>
+              </Button>
               <ThemeToggle />
             </div>
           </div>
@@ -293,6 +304,15 @@ export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onCha
               <GitBranch className="h-5 w-5" />
               <span className="sr-only">Graph View</span>
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowTipsModal(true)}
+              title="Tips & Help"
+            >
+              <HelpCircle className="h-5 w-5" />
+              <span className="sr-only">Tips & Help</span>
+            </Button>
             <ThemeToggle />
           </div>
         </div>
@@ -317,6 +337,11 @@ export function Sidebar({ notes, selectedNoteId, onSelectNote, activeView, onCha
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <TipsModal 
+        isOpen={showTipsModal}
+        onClose={() => setShowTipsModal(false)}
+      />
     </>
   )
 }
